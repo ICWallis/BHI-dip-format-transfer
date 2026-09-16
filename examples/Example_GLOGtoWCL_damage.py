@@ -20,9 +20,18 @@ GLOG = pd.read_csv(
     skiprows=[1], # skips the second row which contains units
     )
 
+# The function assumes the following header names are present in the GLOG file:
+# 'DEPTH', 'AZIMUTH', 'TILT', 'HEIGHT', 'AWIDTH', 'CATEGORY', 'NOTES'
+#
+# If your GLOG file uses different header names, pass them in as col_* kwargs
+# instead of renaming your dataframe, e.g.:
+#   WCL = dt.glog_to_wcl_sticks(GLOG, col_height='HEIGHT_M')
+# Every required column has a matching col_* kwarg (col_depth, col_azimuth,
+# col_tilt, col_height, col_awidth, col_category, col_notes) - see the
+# function docstring for the full list.
 
 
-#%% 
+#%%
 # Undertake the conversion from GLOG to WCL format
 WCL = dt.glog_to_wcl_sticks(GLOG)
 WCL.head()

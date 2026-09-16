@@ -23,11 +23,19 @@ GLOG.head()
 # from the import file and then manually defined and added to the WCL export file. 
 
 # The function assumes the following header names are present in the GLOG file:
-# 'DEPTH_PLANE', 'DEPTH', 'AZIMUTH', 'DIP', 
+# 'DEPTH_PLANE', 'DEPTH', 'AZIMUTH', 'DIP',
 # 'AZI_START', 'AZI_END', 'CATEGORY', 'NOTES'
+#
+# If your GLOG file uses different header names, pass them in as col_* kwargs
+# instead of renaming your dataframe. For example, if your dip column is
+# called 'DIP_APP' instead of 'DIP':
+#   WCL = dt.glog_to_wcl_sinusoids(GLOG, col_dip='DIP_APP')
+# Every required column has a matching col_* kwarg (col_depth_plane, col_depth,
+# col_azi_start, col_azi_end, col_azimuth, col_dip, col_category, col_notes) -
+# see the function docstring for the full list.
 
 
-#%% 
+#%%
 # Undertake the conversion from GLOG to WCL format
 WCL = dt.glog_to_wcl_sinusoids(GLOG)
 WCL.head()

@@ -44,6 +44,16 @@ CALA.head()
 WCL['Radius'] = np.interp(WCL['Depth'], CALA['Depth'], CALA['CALA'] / 2 / 1000)
 
 # %%
+# The function assumes the following header names are present in the WCL file:
+# 'Depth', 'Azimuth', 'Tilt', 'Length', 'Opening', 'Type', 'Notes', 'Radius'
+#
+# If your WCL file uses different header names, pass them in as col_* kwargs
+# instead of renaming your dataframe, e.g.:
+#   GLOG = dt.wcl_to_glog_sticks(WCL, col_opening='Opening_mm')
+# Every required column has a matching col_* kwarg (col_depth, col_azimuth,
+# col_tilt, col_length, col_opening, col_type, col_notes, col_radius) - see
+# the function docstring for the full list.
+
 # Undertake the conversion from WCL to GLOG format
 GLOG = dt.wcl_to_glog_sticks(WCL)
 GLOG.head()

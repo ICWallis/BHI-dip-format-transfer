@@ -25,6 +25,14 @@ WCL.head()
 
 # The function assumes the following header names are present in the WCL file:
 # 'Depth', 'Feature Depth', 'Azimuth', 'Dip', 'Type', 'Visible Azimuth Ranges', 'Aperture'
+# 'Notes' is optional; if missing, a blank NOTES column is created in the output.
+#
+# If your WCL file uses different header names, pass them in as col_* kwargs
+# instead of renaming your dataframe, e.g.:
+#   GLOG = dt.wcl_to_glog_sinusoids(WCL, col_dip='Dip_Apparent')
+# Every column has a matching col_* kwarg (col_depth, col_feature_depth,
+# col_azimuth, col_dip, col_type, col_visible_azimuth_ranges, col_aperture,
+# col_notes) - see the function docstring for the full list.
 
 
 # %%
