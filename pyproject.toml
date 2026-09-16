@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bhi-dip-format-transfer"
-version = "0.1.0"
+version = "0.1.1"
 description = "Convert borehole image (BHI) dip and damage picks between Geolog (GLOG) and WellCAD (WCL) formats."
 readme = "README.md"
 license = "Apache-2.0"
