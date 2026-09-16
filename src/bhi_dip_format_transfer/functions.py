@@ -80,18 +80,22 @@ def glog_to_wcl_sinusoids(glog: pd.DataFrame, **kwargs) -> pd.DataFrame:
     col_category = kwargs.get('col_category', 'CATEGORY')
     col_notes = kwargs.get('col_notes', 'NOTES')
 
-    # Normalize input column names to the canonical names used below, so
-    # callers can pass GLOG files with varying header conventions.
-    glog_processed = glog.rename(columns={
-        col_depth_plane: 'DEPTH_PLANE',
-        col_depth: 'DEPTH',
-        col_azi_start: 'AZI_START',
-        col_azi_end: 'AZI_END',
-        col_azimuth: 'AZIMUTH',
-        col_dip: 'DIP',
-        col_category: 'CATEGORY',
-        col_notes: 'NOTES',
-    }).copy()
+    # Select only the requested input columns and relabel them to the
+    # canonical names used below. Selecting (rather than a bare rename)
+    # avoids ending up with duplicate columns when a custom col_* name
+    # differs from a canonical name that also happens to exist in glog.
+    col_map = {
+        'DEPTH_PLANE': col_depth_plane,
+        'DEPTH': col_depth,
+        'AZI_START': col_azi_start,
+        'AZI_END': col_azi_end,
+        'AZIMUTH': col_azimuth,
+        'DIP': col_dip,
+        'CATEGORY': col_category,
+        'NOTES': col_notes,
+    }
+    glog_processed = glog[list(col_map.values())].copy()
+    glog_processed.columns = list(col_map.keys())
 
     # Infill DEPTH_PLANE for complete sinusoids where only DEPTH is available.
     glog_processed = glog_processed.fillna({'DEPTH_PLANE': glog_processed['DEPTH']})
@@ -248,18 +252,24 @@ def wcl_to_glog_sinusoids(wcl: pd.DataFrame, **kwargs) -> pd.DataFrame:
     col_aperture = kwargs.get('col_aperture', 'Aperture')
     col_notes = kwargs.get('col_notes', 'Notes')
 
-    # Normalize input column names to the canonical names used below, so
-    # callers can pass WCL files with varying header conventions.
-    wcl_processed = wcl.rename(columns={
-        col_depth: 'Depth',
-        col_feature_depth: 'Feature Depth',
-        col_azimuth: 'Azimuth',
-        col_dip: 'Dip',
-        col_type: 'Type',
-        col_visible_azimuth_ranges: 'Visible Azimuth Ranges',
-        col_aperture: 'Aperture',
-        col_notes: 'Notes',
-    }).copy()
+    # Select only the requested input columns and relabel them to the
+    # canonical names used below. Selecting (rather than a bare rename)
+    # avoids ending up with duplicate columns when a custom col_* name
+    # differs from a canonical name that also happens to exist in wcl.
+    # Notes is handled separately below since it is an optional input.
+    col_map = {
+        'Depth': col_depth,
+        'Feature Depth': col_feature_depth,
+        'Azimuth': col_azimuth,
+        'Dip': col_dip,
+        'Type': col_type,
+        'Visible Azimuth Ranges': col_visible_azimuth_ranges,
+        'Aperture': col_aperture,
+    }
+    wcl_processed = wcl[list(col_map.values())].copy()
+    wcl_processed.columns = list(col_map.keys())
+    wcl_processed['Notes'] = wcl[col_notes] if col_notes in wcl.columns else np.nan
+
     wcl_processed['Visible Azimuth Ranges'] = wcl_processed[
         'Visible Azimuth Ranges'
     ].replace(empty_visible_range_value, pd.NA)
@@ -280,9 +290,6 @@ def wcl_to_glog_sinusoids(wcl: pd.DataFrame, **kwargs) -> pd.DataFrame:
         else:
             wcl_processed.at[index, 'GLG_Depth'] = row['Feature Depth']
             wcl_processed.at[index, 'GLG_Depth_Plane'] = row['Depth']
-
-    if 'Notes' not in wcl_processed.columns:
-        wcl_processed['Notes'] = np.nan
 
     wcl_processed.rename(columns={
         'GLG_Depth': 'DEPTH',
@@ -378,17 +385,21 @@ def glog_to_wcl_sticks(glog: pd.DataFrame, **kwargs) -> pd.DataFrame:
     col_category = kwargs.get('col_category', 'CATEGORY')
     col_notes = kwargs.get('col_notes', 'NOTES')
 
-    # Normalize input column names to the canonical names used below, so
-    # callers can pass GLOG files with varying header conventions.
-    glog_processed = glog.rename(columns={
-        col_depth: 'DEPTH',
-        col_azimuth: 'AZIMUTH',
-        col_tilt: 'TILT',
-        col_height: 'HEIGHT',
-        col_awidth: 'AWIDTH',
-        col_category: 'CATEGORY',
-        col_notes: 'NOTES',
-    }).copy()
+    # Select only the requested input columns and relabel them to the
+    # canonical names used below. Selecting (rather than a bare rename)
+    # avoids ending up with duplicate columns when a custom col_* name
+    # differs from a canonical name that also happens to exist in glog.
+    col_map = {
+        'DEPTH': col_depth,
+        'AZIMUTH': col_azimuth,
+        'TILT': col_tilt,
+        'HEIGHT': col_height,
+        'AWIDTH': col_awidth,
+        'CATEGORY': col_category,
+        'NOTES': col_notes,
+    }
+    glog_processed = glog[list(col_map.values())].copy()
+    glog_processed.columns = list(col_map.keys())
 
     # Convert GLOG tilt to WCL tilt convention (opposite direction relative to
     # the borehole axis) and infill missing values.
@@ -597,18 +608,22 @@ def wcl_to_glog_sticks(wcl: pd.DataFrame, **kwargs) -> pd.DataFrame:
     col_notes = kwargs.get('col_notes', 'Notes')
     col_radius = kwargs.get('col_radius', 'Radius')
 
-    # Normalize input column names to the canonical names used below, so
-    # callers can pass WCL files with varying header conventions.
-    wcl_processed = wcl.rename(columns={
-        col_depth: 'Depth',
-        col_azimuth: 'Azimuth',
-        col_tilt: 'Tilt',
-        col_length: 'Length',
-        col_opening: 'Opening',
-        col_type: 'Type',
-        col_notes: 'Notes',
-        col_radius: 'Radius',
-    }).copy()
+    # Select only the requested input columns and relabel them to the
+    # canonical names used below. Selecting (rather than a bare rename)
+    # avoids ending up with duplicate columns when a custom col_* name
+    # differs from a canonical name that also happens to exist in wcl.
+    col_map = {
+        'Depth': col_depth,
+        'Azimuth': col_azimuth,
+        'Tilt': col_tilt,
+        'Length': col_length,
+        'Opening': col_opening,
+        'Type': col_type,
+        'Notes': col_notes,
+        'Radius': col_radius,
+    }
+    wcl_processed = wcl[list(col_map.values())].copy()
+    wcl_processed.columns = list(col_map.keys())
 
     # Set WCL.Tilt values of 0 to NaN
     wcl_processed['Tilt'] = wcl_processed['Tilt'].replace(0, np.nan)
