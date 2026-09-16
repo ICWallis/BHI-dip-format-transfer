@@ -5,6 +5,12 @@ import math
 def glog_to_wcl_sinusoids(glog: pd.DataFrame, **kwargs) -> pd.DataFrame:
     """Convert sinusoid dip picks from Geolog (GLOG) convention to WellCAD (WCL) convention.
 
+    This function handles both complete and partial sinusoid dip picks, ensuring
+    proper conversion of depth and azimuth information from GLOG to WCL format.
+    The output dataframe is structured to align with WellCAD's expected column
+    conventions. Input column names can be customized via keyword arguments if 
+    they differ from the defaults.
+
     Args:
         glog (pd.DataFrame): Input Geolog dataframe. Required columns are:
             - DEPTH_PLANE
@@ -19,7 +25,7 @@ def glog_to_wcl_sinusoids(glog: pd.DataFrame, **kwargs) -> pd.DataFrame:
     Kwargs:
         round_decimals (int, optional): Number of decimals used when rounding
             AZI_START and AZI_END before building the visible azimuth range.
-            Defaults to 1.
+            Defaults to 1.    
         aperture_value (int | float, optional): Constant value assigned to the
             output Aperture column. Defaults to 0.
         empty_azi_range_value (str, optional): Replacement value for rows where
@@ -27,6 +33,21 @@ def glog_to_wcl_sinusoids(glog: pd.DataFrame, **kwargs) -> pd.DataFrame:
             Defaults to a single blank space " ".
         azi_range_separator (str, optional): Separator used to combine AZI_START
             and AZI_END into the WCL visible azimuth range. Defaults to "-".
+        col_depth_plane (str, optional): Column name holding GLOG DEPTH_PLANE.
+            Defaults to "DEPTH_PLANE".
+        col_depth (str, optional): Column name holding GLOG DEPTH. Defaults to
+            "DEPTH".
+        col_azi_start (str, optional): Column name holding GLOG AZI_START.
+            Defaults to "AZI_START".
+        col_azi_end (str, optional): Column name holding GLOG AZI_END. Defaults
+            to "AZI_END".
+        col_azimuth (str, optional): Column name holding GLOG AZIMUTH. Defaults
+            to "AZIMUTH".
+        col_dip (str, optional): Column name holding GLOG DIP. Defaults to "DIP".
+        col_category (str, optional): Column name holding GLOG CATEGORY.
+            Defaults to "CATEGORY".
+        col_notes (str, optional): Column name holding GLOG NOTES. Defaults to
+            "NOTES".
 
     Returns:
         pd.DataFrame: WCL-formatted dataframe with columns:
@@ -50,7 +71,27 @@ def glog_to_wcl_sinusoids(glog: pd.DataFrame, **kwargs) -> pd.DataFrame:
     empty_azi_range_value = kwargs.get('empty_azi_range_value', ' ')
     azi_range_separator = kwargs.get('azi_range_separator', '-')
 
-    glog_processed = glog.copy()
+    col_depth_plane = kwargs.get('col_depth_plane', 'DEPTH_PLANE')
+    col_depth = kwargs.get('col_depth', 'DEPTH')
+    col_azi_start = kwargs.get('col_azi_start', 'AZI_START')
+    col_azi_end = kwargs.get('col_azi_end', 'AZI_END')
+    col_azimuth = kwargs.get('col_azimuth', 'AZIMUTH')
+    col_dip = kwargs.get('col_dip', 'DIP')
+    col_category = kwargs.get('col_category', 'CATEGORY')
+    col_notes = kwargs.get('col_notes', 'NOTES')
+
+    # Normalize input column names to the canonical names used below, so
+    # callers can pass GLOG files with varying header conventions.
+    glog_processed = glog.rename(columns={
+        col_depth_plane: 'DEPTH_PLANE',
+        col_depth: 'DEPTH',
+        col_azi_start: 'AZI_START',
+        col_azi_end: 'AZI_END',
+        col_azimuth: 'AZIMUTH',
+        col_dip: 'DIP',
+        col_category: 'CATEGORY',
+        col_notes: 'NOTES',
+    }).copy()
 
     # Infill DEPTH_PLANE for complete sinusoids where only DEPTH is available.
     glog_processed = glog_processed.fillna({'DEPTH_PLANE': glog_processed['DEPTH']})
@@ -133,6 +174,13 @@ def process_azimuth_range(row):
 def wcl_to_glog_sinusoids(wcl: pd.DataFrame, **kwargs) -> pd.DataFrame:
     """Convert sinusoid dip picks from WellCAD (WCL) convention to Geolog (GLOG) convention.
 
+    This function ensures that the sinusoid dip picks are correctly transformed 
+    from the WellCAD convention to the Geolog convention, maintaining the 
+    integrity of depth, azimuth, and dip information. The output dataframe is 
+    structured to align with GeoLOG's expected column conventions. If column 
+    names in the input dataframe differ from the defaults, they can be specified 
+    via keyword arguments.
+
     Args:
         wcl (pd.DataFrame): Input WellCAD dataframe. Required columns are:
             - Depth
@@ -149,6 +197,22 @@ def wcl_to_glog_sinusoids(wcl: pd.DataFrame, **kwargs) -> pd.DataFrame:
             to a single blank space " ".
         nan_fill_value (int | float, optional): Value used to replace NaN in
             the final GLOG output. Defaults to -999.25.
+        col_depth (str, optional): Column name holding WCL Depth. Defaults to
+            "Depth".
+        col_feature_depth (str, optional): Column name holding WCL Feature
+            Depth. Defaults to "Feature Depth".
+        col_azimuth (str, optional): Column name holding WCL Azimuth. Defaults
+            to "Azimuth".
+        col_dip (str, optional): Column name holding WCL Dip. Defaults to "Dip".
+        col_type (str, optional): Column name holding WCL Type. Defaults to
+            "Type".
+        col_visible_azimuth_ranges (str, optional): Column name holding WCL
+            Visible Azimuth Ranges. Defaults to "Visible Azimuth Ranges".
+        col_aperture (str, optional): Column name holding WCL Aperture.
+            Defaults to "Aperture".
+        col_notes (str, optional): Column name holding WCL Notes. This column
+            is optional in the input; if absent, NOTES is created and filled
+            with NaN. Defaults to "Notes".
 
     Returns:
         pd.DataFrame: GLOG-formatted dataframe with columns:
@@ -175,7 +239,27 @@ def wcl_to_glog_sinusoids(wcl: pd.DataFrame, **kwargs) -> pd.DataFrame:
     empty_visible_range_value = kwargs.get('empty_visible_range_value', ' ')
     nan_fill_value = kwargs.get('nan_fill_value', -999.25)
 
-    wcl_processed = wcl.copy()
+    col_depth = kwargs.get('col_depth', 'Depth')
+    col_feature_depth = kwargs.get('col_feature_depth', 'Feature Depth')
+    col_azimuth = kwargs.get('col_azimuth', 'Azimuth')
+    col_dip = kwargs.get('col_dip', 'Dip')
+    col_type = kwargs.get('col_type', 'Type')
+    col_visible_azimuth_ranges = kwargs.get('col_visible_azimuth_ranges', 'Visible Azimuth Ranges')
+    col_aperture = kwargs.get('col_aperture', 'Aperture')
+    col_notes = kwargs.get('col_notes', 'Notes')
+
+    # Normalize input column names to the canonical names used below, so
+    # callers can pass WCL files with varying header conventions.
+    wcl_processed = wcl.rename(columns={
+        col_depth: 'Depth',
+        col_feature_depth: 'Feature Depth',
+        col_azimuth: 'Azimuth',
+        col_dip: 'Dip',
+        col_type: 'Type',
+        col_visible_azimuth_ranges: 'Visible Azimuth Ranges',
+        col_aperture: 'Aperture',
+        col_notes: 'Notes',
+    }).copy()
     wcl_processed['Visible Azimuth Ranges'] = wcl_processed[
         'Visible Azimuth Ranges'
     ].replace(empty_visible_range_value, pd.NA)
@@ -197,8 +281,8 @@ def wcl_to_glog_sinusoids(wcl: pd.DataFrame, **kwargs) -> pd.DataFrame:
             wcl_processed.at[index, 'GLG_Depth'] = row['Feature Depth']
             wcl_processed.at[index, 'GLG_Depth_Plane'] = row['Depth']
 
-    if 'NOTES' not in wcl_processed.columns:
-        wcl_processed['NOTES'] = np.nan
+    if 'Notes' not in wcl_processed.columns:
+        wcl_processed['Notes'] = np.nan
 
     wcl_processed.rename(columns={
         'GLG_Depth': 'DEPTH',
@@ -231,6 +315,10 @@ def wcl_to_glog_sinusoids(wcl: pd.DataFrame, **kwargs) -> pd.DataFrame:
 def glog_to_wcl_sticks(glog: pd.DataFrame, **kwargs) -> pd.DataFrame:
     """Convert stick (damage) picks from Geolog (GLOG) convention to WellCAD (WCL) convention.
 
+    The function assumes that the input dataframe follows the GLOG column conventions.
+    If the column names in the input dataframe differ from the defaults, 
+    they can be specified via keyword arguments.
+
     Args:
         glog (pd.DataFrame): Input Geolog dataframe. Required columns are:
             - DEPTH
@@ -249,6 +337,20 @@ def glog_to_wcl_sticks(glog: pd.DataFrame, **kwargs) -> pd.DataFrame:
             introduced by the sign conversion. Defaults to 0.1.
         opening_fill_value (int | float, optional): Value used to replace
             missing AWIDTH (WCL Opening) values. Defaults to 0.
+        col_depth (str, optional): Column name holding GLOG DEPTH. Defaults to
+            "DEPTH".
+        col_azimuth (str, optional): Column name holding GLOG AZIMUTH. Defaults
+            to "AZIMUTH".
+        col_tilt (str, optional): Column name holding GLOG TILT. Defaults to
+            "TILT".
+        col_height (str, optional): Column name holding GLOG HEIGHT. Defaults
+            to "HEIGHT".
+        col_awidth (str, optional): Column name holding GLOG AWIDTH. Defaults
+            to "AWIDTH".
+        col_category (str, optional): Column name holding GLOG CATEGORY.
+            Defaults to "CATEGORY".
+        col_notes (str, optional): Column name holding GLOG NOTES. Defaults to
+            "NOTES".
 
     Returns:
         pd.DataFrame: WCL-formatted dataframe with columns:
@@ -268,7 +370,25 @@ def glog_to_wcl_sticks(glog: pd.DataFrame, **kwargs) -> pd.DataFrame:
     tilt_zero_threshold = kwargs.get('tilt_zero_threshold', 0.1)
     opening_fill_value = kwargs.get('opening_fill_value', 0)
 
-    glog_processed = glog.copy()
+    col_depth = kwargs.get('col_depth', 'DEPTH')
+    col_azimuth = kwargs.get('col_azimuth', 'AZIMUTH')
+    col_tilt = kwargs.get('col_tilt', 'TILT')
+    col_height = kwargs.get('col_height', 'HEIGHT')
+    col_awidth = kwargs.get('col_awidth', 'AWIDTH')
+    col_category = kwargs.get('col_category', 'CATEGORY')
+    col_notes = kwargs.get('col_notes', 'NOTES')
+
+    # Normalize input column names to the canonical names used below, so
+    # callers can pass GLOG files with varying header conventions.
+    glog_processed = glog.rename(columns={
+        col_depth: 'DEPTH',
+        col_azimuth: 'AZIMUTH',
+        col_tilt: 'TILT',
+        col_height: 'HEIGHT',
+        col_awidth: 'AWIDTH',
+        col_category: 'CATEGORY',
+        col_notes: 'NOTES',
+    }).copy()
 
     # Convert GLOG tilt to WCL tilt convention (opposite direction relative to
     # the borehole axis) and infill missing values.
@@ -403,6 +523,10 @@ def apply_crack_tip_calculation(row):
 def wcl_to_glog_sticks(wcl: pd.DataFrame, **kwargs) -> pd.DataFrame:
     """Convert stick (damage) picks from WellCAD (WCL) convention to Geolog (GLOG) convention.
 
+    The function assumes that the input dataframe follows the WCL column conventions.
+    If the column names in the input dataframe differ from the defaults, they can
+    be specified via keyword arguments.
+
     Args:
         wcl (pd.DataFrame): Input WellCAD dataframe. Required columns are:
             - Depth
@@ -420,6 +544,22 @@ def wcl_to_glog_sticks(wcl: pd.DataFrame, **kwargs) -> pd.DataFrame:
         nan_fill_value (int | float, optional): Value used to replace all
             remaining NaN values before export, matching the GLOG convention
             for missing data. Defaults to -999.25.
+        col_depth (str, optional): Column name holding WCL Depth. Defaults to
+            "Depth".
+        col_azimuth (str, optional): Column name holding WCL Azimuth. Defaults
+            to "Azimuth".
+        col_tilt (str, optional): Column name holding WCL Tilt. Defaults to
+            "Tilt".
+        col_length (str, optional): Column name holding WCL Length. Defaults
+            to "Length".
+        col_opening (str, optional): Column name holding WCL Opening. Defaults
+            to "Opening".
+        col_type (str, optional): Column name holding WCL Type. Defaults to
+            "Type".
+        col_notes (str, optional): Column name holding WCL Notes. Defaults to
+            "Notes".
+        col_radius (str, optional): Column name holding WCL Radius. Defaults
+            to "Radius".
 
     Returns:
         pd.DataFrame: GLOG-formatted dataframe with columns:
@@ -448,7 +588,27 @@ def wcl_to_glog_sticks(wcl: pd.DataFrame, **kwargs) -> pd.DataFrame:
     """
     nan_fill_value = kwargs.get('nan_fill_value', -999.25)
 
-    wcl_processed = wcl.copy()
+    col_depth = kwargs.get('col_depth', 'Depth')
+    col_azimuth = kwargs.get('col_azimuth', 'Azimuth')
+    col_tilt = kwargs.get('col_tilt', 'Tilt')
+    col_length = kwargs.get('col_length', 'Length')
+    col_opening = kwargs.get('col_opening', 'Opening')
+    col_type = kwargs.get('col_type', 'Type')
+    col_notes = kwargs.get('col_notes', 'Notes')
+    col_radius = kwargs.get('col_radius', 'Radius')
+
+    # Normalize input column names to the canonical names used below, so
+    # callers can pass WCL files with varying header conventions.
+    wcl_processed = wcl.rename(columns={
+        col_depth: 'Depth',
+        col_azimuth: 'Azimuth',
+        col_tilt: 'Tilt',
+        col_length: 'Length',
+        col_opening: 'Opening',
+        col_type: 'Type',
+        col_notes: 'Notes',
+        col_radius: 'Radius',
+    }).copy()
 
     # Set WCL.Tilt values of 0 to NaN
     wcl_processed['Tilt'] = wcl_processed['Tilt'].replace(0, np.nan)
